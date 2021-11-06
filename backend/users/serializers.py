@@ -23,10 +23,10 @@ class CustomUserSerializer(UserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        if user.is_anonymous:
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
             return False
-        return Follow.objects.filter(user=user, following=obj).exists()
+        return Follow.objects.filter(user=request.user, following=obj).exists()
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -42,9 +42,11 @@ class FollowSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        user = self.context['request'].user
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
         following = data['following']
-        if user == following:
+        if request.user == following:
             raise serializers.ValidationError(
                 'Вы не можете подписаться на себя!'
             )
@@ -74,13 +76,15 @@ class FollowListSerializer(serializers.ModelSerializer):
                   'is_subscribed', 'recipes', 'recipes_count')
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        if user.is_anonymous:
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
             return False
-        return Follow.objects.filter(user=user, following=obj).exists()
+        return Follow.objects.filter(user=request.user, following=obj).exists()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
         context = {'request': request}
         recipes_limit = request.query_params.get('recipes_limit')
         if recipes_limit is not None:

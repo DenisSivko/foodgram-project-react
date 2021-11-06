@@ -49,16 +49,17 @@ class RecipeListSerializer(serializers.ModelSerializer):
         return IngredientQuantitySerializer(ingredients, many=True).data
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
-        if user.is_anonymous:
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
             return False
-        return Favorite.objects.filter(user=user, recipe=obj).exists()
+        return Favorite.objects.filter(user=request.user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
-        if user.is_anonymous:
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
             return False
-        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
+        return ShoppingCart.objects.filter(
+            user=request.user, recipe=obj).exists()
 
 
 class IngredientWriteSerializer(serializers.ModelSerializer):
@@ -87,19 +88,51 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'name', 'text', 'cooking_time'
         )
 
-    def create_ingredients(self, ingredients, recipe):
+    def validate(self, data):
+        ingredients = self.initial_data.get('ingredients')
         if not ingredients:
             raise serializers.ValidationError({
                 'ingredients': 'Нужно выбрать хотя бы один ингредиент!'
             })
-
+        ingredients_list = []
         for ingredient in ingredients:
             ingredient_id = ingredient['id']
+            if ingredient_id in ingredients_list:
+                raise serializers.ValidationError({
+                    'ingredients': 'Ингредиенты должны быть уникальными!'
+                })
+            ingredients_list.append(ingredient_id)
             amount = ingredient['amount']
-            if amount <= 0:
+            if int(amount) <= 0:
                 raise serializers.ValidationError({
                     'amount': 'Количество ингредиента должно быть больше нуля!'
                 })
+
+        tags = self.initial_data.get('tags')
+        if not tags:
+            raise serializers.ValidationError({
+                'tags': 'Нужно выбрать хотя бы один тэг!'
+            })
+        tags_list = []
+        for tag in tags:
+            if tag in tags_list:
+                raise serializers.ValidationError({
+                    'tags': 'Тэги должны быть уникальными!'
+                })
+            tags_list.append(tag)
+
+        cooking_time = self.initial_data.get('cooking_time')
+        if int(cooking_time) <= 0:
+            raise serializers.ValidationError({
+                'cooking_time': 'Время приготовления должно быть больше 0!'
+            })
+
+        return data
+
+    def create_ingredients(self, ingredients, recipe):
+        for ingredient in ingredients:
+            ingredient_id = ingredient['id']
+            amount = ingredient['amount']
             IngredientQuantity.objects.create(
                 recipe=recipe, ingredient=ingredient_id, amount=amount
             )
@@ -155,9 +188,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
 
     def validate(self, data):
-        user = self.context['request'].user
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
         recipe = data['recipe']
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+        if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
             raise serializers.ValidationError({
                 'status': 'Рецепт уже есть в избранном!'
             })
@@ -176,9 +211,13 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
 
     def validate(self, data):
-        user = self.context['request'].user
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
         recipe = data['recipe']
-        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+        if ShoppingCart.objects.filter(
+            user=request.user, recipe=recipe
+        ).exists():
             raise serializers.ValidationError({
                 'status': 'Рецепт уже есть в списке покупок!'
             })
