@@ -1,2 +1,0 @@
-scp docker-compose.yml denlion@51.250.21.231:/home/denlion/docker-compose.yml
-scp nginx.conf denlion@51.250.21.231:/home/denlion/nginx.conf
