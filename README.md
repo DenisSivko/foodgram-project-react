@@ -1,7 +1,19 @@
 #  Foodgram - продуктовый помощник
+![workflow](https://github.com/DenisSivko/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
 
 ## Описание проекта
 На этом сервисе пользователи смогут публиковать рецепты, подписываться на публикации других пользователей, добавлять понравившиеся рецепты в список «Избранное», а перед походом в магазин скачивать сводный список продуктов, необходимых для приготовления одного или нескольких выбранных блюд.
+
+## Описание Workflow
+##### Workflow состоит из четырёх шагов:
+###### tests
+- Проверка кода на соответствие PEP8.
+###### Push Docker image to Docker Hub
+- Сборка и публикация образа на DockerHub.
+###### deploy 
+- Автоматический деплой на боевой сервер при пуше в главную ветку.
+###### send_massage
+- Отправка уведомления в телеграм-чат.
 
 ## Подготовка и запуск проекта
 ##### Клонирование репозитория
@@ -30,7 +42,10 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-##### Шаг 4. Скопируйте подготовленные файлы из каталога infra:
+##### Шаг 4. Локально отредактируйте файл nginx.conf
+Локально отредактируйте файл `infra/nginx.conf` и в строке `server_name` впишите свой IP.
+
+##### Шаг 5. Скопируйте подготовленные файлы из каталога infra:
 Скопируйте подготовленные файлы `infra/docker-compose.yml` и `infra/nginx.conf` из вашего проекта на сервер в `home/<ваш_username>/docker-compose.yml` и `home/<ваш_username>/nginx.conf` соответственно.
 Введите команду из корневой папки проекта:
 ```bash
@@ -38,7 +53,21 @@ scp docker-compose.yml <username>@<host>:/home/<username>/docker-compose.yml
 scp nginx.conf <username>@<host>:/home/<username>/nginx.conf
 ```
 
-##### Шаг 5. Добавьте Secrets:
+##### Шаг 6. Cоздайте .env файл:
+На сервере создайте файл `nano .env` и заполните переменные окружения (или создайте этот файл локально и скопируйте файл по аналогии с предыдущим шагом):
+```bash
+SECRET_KEY=<SECRET_KEY>
+DEBUG=<True/False>
+
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+```
+
+##### Шаг 7. Добавьте Secrets:
 Для работы с Workflow добавьте в Secrets GitHub переменные окружения для работы:
 ```bash
 DB_ENGINE=django.db.backends.postgresql
@@ -60,10 +89,17 @@ TELEGRAM_TO=<ID своего телеграм-аккаунта>
 TELEGRAM_TOKEN=<токен вашего бота>
 ```
 
-##### Шаг 6. После успешного деплоя:
-Зайдите на боевой сервер и выполните команды (только после первого деплоя):
+##### Шаг 8. После успешного деплоя:
+Зайдите на боевой сервер и выполните команды:
+
+###### На сервере соберите docker-compose:
+```bash
+sudo docker-compose up -d --build
+```
+
 ###### Создаем и применяем миграции:
 ```bash
+sudo docker-compose exec backend python manage.py makemigrations --noinput
 sudo docker-compose exec backend python manage.py migrate --noinput
 ```
 ###### Подгружаем статику
@@ -77,4 +113,13 @@ sudo docker-compose exec backend python manage.py loaddata fixtures/ingredients.
 ###### Создать суперпользователя Django:
 ```bash
 sudo docker-compose exec backend python manage.py createsuperuser
+```
+
+## Проект:
+Проект временно доступен по адресу: http://51.250.21.231/
+
+###### Логин и пароль администратора:
+```bash
+admin@yandex.ru
+admin
 ```
