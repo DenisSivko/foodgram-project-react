@@ -1,4 +1,4 @@
-name: Foodgram workflow.
+name: Foodgram workflow
 
 on:
   push:
@@ -59,9 +59,8 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
-          stack_file_name: docker-compose.yml
           script: |
-            sudo docker pull denissivko/foodgram
+            sudo docker pull denissivko/foodgram:latest
             sudo docker-compose stop
             sudo docker-compose rm backend
             touch .env 
