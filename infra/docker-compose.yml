@@ -9,7 +9,7 @@ services:
       - ./.env
   
   backend:
-    image: denissivko/foodgram_backend:v1
+    image: denissivko/foodgram_backend:latest
     restart: always
     volumes:
       - static_value:/code/static/
