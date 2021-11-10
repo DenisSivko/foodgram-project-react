@@ -115,11 +115,5 @@ sudo docker-compose exec backend python manage.py loaddata fixtures/ingredients.
 sudo docker-compose exec backend python manage.py createsuperuser
 ```
 
-## Проект:
-Проект временно доступен по адресу: http://51.250.21.231/
-
-###### Логин и пароль администратора:
-```bash
-admin@yandex.ru
-admin
-```
+##### Шаг 9. Проект запущен:
+Проект будет доступен по вашему IP-адресу.
